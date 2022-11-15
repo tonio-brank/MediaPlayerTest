@@ -21,7 +21,9 @@ import android.media.browse.MediaBrowser;
 import android.media.session.MediaController;
 import android.media.session.MediaSession;
 import android.media.session.PlaybackState;
+import android.net.Uri;
 import android.os.Bundle;
+import android.os.ResultReceiver;
 import android.os.SystemClock;
 import android.service.media.MediaBrowserService;
 import android.support.v4.media.MediaBrowserCompat;
@@ -40,6 +42,7 @@ import androidx.core.content.ContextCompat;
 import androidx.media.MediaBrowserServiceCompat;
 import androidx.media.session.MediaButtonReceiver;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +59,14 @@ public class MediaPlaybackService extends MediaBrowserService {
     public void onCreate() {
         super.onCreate();
 
-        mediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.test);
+//        mediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.test);
+//        String url = "https://locki.oeilabsolu.ch/streams/63727a6795f0836043d34088.m3u8";
+//        String url = "http://content.mobile-tv.sky.com/content/ssna/live/ssnraudio.m3u8";
+//        mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.parse(url));
+
+            mediaPlayer = new MediaPlayer();
+
+
 
                 // Create a MediaSessionCompat
         mediaSession = new MediaSession(getApplicationContext(), "LOG_TAG");
@@ -121,94 +131,90 @@ public class MediaPlaybackService extends MediaBrowserService {
     private IntentFilter intentFilter = new IntentFilter(AudioManager.ACTION_AUDIO_BECOMING_NOISY);
 
 
-
-    MediaSession.Callback callback = new
-            MediaSession.Callback() {
-                @Override
-                public void onPlay() {
-                    startService(new Intent(getApplicationContext(), MediaBrowserService.class));
-                    stateBuilder.setState(PlaybackState.STATE_PLAYING, mediaPlayer.getCurrentPosition(), 1);
-                    mediaSession.setPlaybackState(stateBuilder.build());
+    public void play(){
+        startService(new Intent(getApplicationContext(), MediaBrowserService.class));
+        stateBuilder.setState(PlaybackState.STATE_PLAYING, mediaPlayer.getCurrentPosition(), 1);
+        mediaSession.setPlaybackState(stateBuilder.build());
 
 
-                    mediaSession.setActive(true);
-                    Toast.makeText(getApplicationContext(), "playing from service", Toast.LENGTH_SHORT).show();
-                    // Given a media session and its context (usually the component containing the session)
-                    // Create a NotificationCompat.Builder
+        mediaSession.setActive(true);
+        Toast.makeText(getApplicationContext(), "playing from service", Toast.LENGTH_SHORT).show();
+        // Given a media session and its context (usually the component containing the session)
+        // Create a NotificationCompat.Builder
 
-                    // Get the session's metadata
+        // Get the session's metadata
 
 
-                    MediaDescription.Builder md = new MediaDescription.Builder();
-                    md.setTitle("Haircut for men");
-                    md.setSubtitle("test");
-                    md.setDescription("Je t'aime mon eli");
+        MediaDescription.Builder md = new MediaDescription.Builder();
+        md.setTitle("Haircut for men");
+        md.setSubtitle("test");
+        md.setDescription("Je t'aime mon eli");
 
-                    MediaMetadata.Builder mm = new MediaMetadata.Builder();
-                    mediaSession.setMetadata(
-                            new MediaMetadata.Builder()
-                                    .putString(MediaMetadata.METADATA_KEY_ARTIST, "Haircut for men")
-                                    .putString(MediaMetadata.METADATA_KEY_TITLE, "ching chong")
-                                    .putLong(
-                                            MediaMetadata.METADATA_KEY_DURATION,
-                                            mediaPlayer.getDuration()
-                                    )
-                                    .putString(MediaMetadata.METADATA_KEY_DISPLAY_DESCRIPTION, "Test Description")
+        MediaMetadata.Builder mm = new MediaMetadata.Builder();
+        mediaSession.setMetadata(
+                new MediaMetadata.Builder()
+                        .putString(MediaMetadata.METADATA_KEY_ARTIST, "Haircut for men")
+                        .putString(MediaMetadata.METADATA_KEY_TITLE, "ching chong")
+                        .putLong(
+                                MediaMetadata.METADATA_KEY_DURATION,
+                                mediaPlayer.getDuration()
+                        )
+                        .putString(MediaMetadata.METADATA_KEY_DISPLAY_DESCRIPTION, "Test Description")
 
 //                                    .putBitmap(MediaMetadata.METADATA_KEY_ALBUM_ART, largeIcon)
-                                    .build()
-                    );
+                        .build()
+        );
 
 
-                    MediaController controller = mediaSession.getController();
+        MediaController controller = mediaSession.getController();
 //                    MediaMetadataCompat mediaMetadata = controller.getMetadata();
 //                    MediaDescriptionCompat description = mediaMetadata.getDescription();
 
 
-                    NotificationChannel chan = new NotificationChannel("mediaPlayer", "buttons", NotificationManager.IMPORTANCE_NONE);
-                    chan.setLightColor(Color.BLUE);
-                    chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
-                    NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-                    assert manager != null;
-                    manager.createNotificationChannel(chan);
-                    Notification.Builder builder = new Notification.Builder(getApplicationContext(), "mediaPlayer");
+        NotificationChannel chan = new NotificationChannel("mediaPlayer", "buttons", NotificationManager.IMPORTANCE_NONE);
+        chan.setLightColor(Color.BLUE);
+        chan.setLockscreenVisibility(Notification.VISIBILITY_PRIVATE);
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        assert manager != null;
+        manager.createNotificationChannel(chan);
+        Notification.Builder builder = new Notification.Builder(getApplicationContext(), "mediaPlayer");
 
-                    builder
-                            // Add the metadata for the currently playing track
-                            .setContentTitle("Title")
-                            .setContentText("Subtitle")
-                            .setSubText("Description")
+        builder
+                // Add the metadata for the currently playing track
+                .setContentTitle("Title")
+                .setContentText("Subtitle")
+                .setSubText("Description")
 //                            .setLargeIcon(description.getIconBitmap())
 
-                            // Enable launching the player by clicking the notification
-                            .setContentIntent(controller.getSessionActivity())
+                // Enable launching the player by clicking the notification
+                .setContentIntent(controller.getSessionActivity())
 
-                            // Stop the service when the notification is swiped away
-                            .setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(getApplicationContext(),
-                                    PlaybackStateCompat.ACTION_STOP))
+                // Stop the service when the notification is swiped away
+                .setDeleteIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(getApplicationContext(),
+                        PlaybackStateCompat.ACTION_STOP))
 
-                            // Make the transport controls visible on the lockscreen
-                            .setVisibility(Notification.VISIBILITY_PUBLIC)
+                // Make the transport controls visible on the lockscreen
+                .setVisibility(Notification.VISIBILITY_PUBLIC)
 
-                            // Add an app icon and set its accent color
-                            // Be careful about the color
-                            .setSmallIcon(R.drawable.ic_launcher_background)
-                            .setColor(Color.argb(255, 255, 0, 0))
-                            .setColorized(true)
-                            // Add a pause button
-                            .addAction(new Notification.Action(
-                                    R.drawable.ic_launcher_background, "pause",
-                                    MediaButtonReceiver.buildMediaButtonPendingIntent(getApplicationContext(),
-                                            PlaybackState.ACTION_PLAY_PAUSE)))
-                            .addAction(new Notification.Action(
-                                    R.drawable.ic_launcher_foreground, "fast",
-                                    MediaButtonReceiver.buildMediaButtonPendingIntent(getApplicationContext(),
-                                            PlaybackState.ACTION_FAST_FORWARD)))
+                // Add an app icon and set its accent color
+                // Be careful about the color
+                .setSmallIcon(R.drawable.ic_launcher_background)
+                .setColor(Color.argb(255, 255, 0, 0))
+                .setColorized(true)
+                // Add a pause button
+                .addAction(new Notification.Action(
+                        R.drawable.ic_launcher_background, "pause",
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(getApplicationContext(),
+                                PlaybackState.ACTION_PLAY_PAUSE)))
+                .addAction(new Notification.Action(
+                        R.drawable.ic_launcher_foreground, "fast",
+                        MediaButtonReceiver.buildMediaButtonPendingIntent(getApplicationContext(),
+                                PlaybackState.ACTION_FAST_FORWARD)))
 
-                            // Take advantage of MediaStyle features
-                            .setStyle(new Notification.DecoratedMediaCustomViewStyle()
-                                    .setMediaSession(mediaSession.getSessionToken()));
-                                    // Add a cancel button
+                // Take advantage of MediaStyle features
+                .setStyle(new Notification.DecoratedMediaCustomViewStyle()
+                        .setMediaSession(mediaSession.getSessionToken()));
+        // Add a cancel button
 //                                    .setShowCancelButton(true)
 //                                    .setCancelButtonIntent(MediaButtonReceiver.buildMediaButtonPendingIntent(getApplicationContext(),
 //                                            PlaybackStateCompat.ACTION_STOP)));
@@ -225,9 +231,16 @@ public class MediaPlaybackService extends MediaBrowserService {
 
 
 
-                    startForeground(1, builder.build());
-                    mediaPlayer.start(); // no need to call prepare(); create() does that for you
+        startForeground(1, builder.build());
+        mediaPlayer.start(); // no need to call prepare(); create() does that for you
+    }
 
+
+    MediaSession.Callback callback = new
+            MediaSession.Callback() {
+                @Override
+                public void onPlay() {
+                    play();
                 }
 
                 @Override
@@ -263,6 +276,25 @@ public class MediaPlaybackService extends MediaBrowserService {
                     PlaybackParams pp = mediaPlayer.getPlaybackParams();
                     pp.setSpeed(pp.getSpeed()*1.1f);
                     mediaPlayer.setPlaybackParams(pp);
+                }
+
+                @Override
+                public void onCommand(@NonNull String command, @Nullable Bundle args, @Nullable ResultReceiver cb) {
+//                    Toast.makeText(getApplicationContext(), command, Toast.LENGTH_SHORT).show();
+                    if (command.equals("new-song")){
+                        String newSong = args.getString("url");
+                        Toast.makeText(getApplicationContext(), newSong, Toast.LENGTH_SHORT).show();
+                        try {
+                            mediaPlayer.setDataSource(newSong);
+                            mediaPlayer.prepare();
+                            play();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+
+
+                    }
+
                 }
             };
 }

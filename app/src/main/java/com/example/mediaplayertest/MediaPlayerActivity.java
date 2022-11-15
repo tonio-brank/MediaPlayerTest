@@ -3,6 +3,7 @@ package com.example.mediaplayertest;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.ComponentName;
+import android.content.Intent;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.support.v4.media.MediaBrowserCompat;
@@ -20,6 +21,8 @@ public class MediaPlayerActivity extends AppCompatActivity {
     MediaControllerCompat mediaController;
     Button playPause;
 
+    MediaPlaybackService mps = new MediaPlaybackService();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,6 +34,8 @@ public class MediaPlayerActivity extends AppCompatActivity {
                 new ComponentName(this, MediaPlaybackService.class),
                 connectionCallbacks,
                 null); // optional Bundle
+
+
 
     }
 
@@ -54,7 +59,6 @@ public class MediaPlayerActivity extends AppCompatActivity {
             MediaControllerCompat.getMediaController(MediaPlayerActivity.this).unregisterCallback(controllerCallback);
         }
         mediaBrowser.disconnect();
-
     }
 
     private final MediaBrowserCompat.ConnectionCallback connectionCallbacks =
@@ -103,10 +107,14 @@ public class MediaPlayerActivity extends AppCompatActivity {
                 }
             };
 
+
+
+
     void buildTransportControls()
     {
         // Attach a listener to the button
         playPause = findViewById(R.id.playPause);
+
 
         playPause.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -114,12 +122,17 @@ public class MediaPlayerActivity extends AppCompatActivity {
                 // Since this is a play/pause button, you'll need to test the current state
                 // and choose the action accordingly
 
-                int pbState = MediaControllerCompat.getMediaController(MediaPlayerActivity.this).getPlaybackState().getState();
-                if (pbState == PlaybackStateCompat.STATE_PLAYING) {
-                    MediaControllerCompat.getMediaController(MediaPlayerActivity.this).getTransportControls().pause();
-                } else {
-                    MediaControllerCompat.getMediaController(MediaPlayerActivity.this).getTransportControls().play();
-                }
+                Intent intent =  new Intent(getApplicationContext(), MediaPlayerActivity.class);
+                intent.putExtra("url", "https://locki.oeilabsolu.ch/streams/63727a6795f0836043d34088.m3u8");
+
+                mediaController.sendCommand("new-song", intent.getExtras(), null);
+
+//                int pbState = MediaControllerCompat.getMediaController(MediaPlayerActivity.this).getPlaybackState().getState();
+//                if (pbState == PlaybackStateCompat.STATE_PLAYING) {
+//                    MediaControllerCompat.getMediaController(MediaPlayerActivity.this).getTransportControls().pause();
+//                } else {
+//                    MediaControllerCompat.getMediaController(MediaPlayerActivity.this).getTransportControls().play();
+//                }
             }
             });
 
@@ -133,10 +146,5 @@ public class MediaPlayerActivity extends AppCompatActivity {
             mediaController.registerCallback(controllerCallback);
 
     };
-
-
-
-
-
 }
 
